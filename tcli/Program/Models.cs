@@ -3,9 +3,9 @@ using System.Text.Json;
 namespace tcli {
     public class Model
     {
-        public string? PbiWorkspaceString { get; set; }
-        public string? PbiSemanticModelName { get; set; }
-        public string? TmdlPath { get; set; }
+        public string? PBI_WORKSPACE_STRING { get; set; }
+        public string? PBI_SEMANTIC_MODEL_NAME { get; set; }
+        public string? TMDL_PATH { get; set; }
     }
 
     public class Models

@@ -41,9 +41,9 @@ namespace tcli {
                 Console.WriteLine("Models:");
                 foreach (var model in models.ModelsDictionary) {
                     Console.WriteLine("\t" + model.Key + ":");
-                    Console.WriteLine("\t\tPbiWorkspaceString: " + model.Value.PbiWorkspaceString);
-                    Console.WriteLine("\t\tPbiSemanticModelName: " + model.Value.PbiSemanticModelName);
-                    Console.WriteLine("\t\tTmdlPath: " + model.Value.TmdlPath);
+                    Console.WriteLine("\t\tPbiWorkspaceString: " + model.Value.PBI_WORKSPACE_STRING);
+                    Console.WriteLine("\t\tPbiSemanticModelName: " + model.Value.PBI_SEMANTIC_MODEL_NAME);
+                    Console.WriteLine("\t\tTmdlPath: " + model.Value.TMDL_PATH);
                     Console.WriteLine();
                 }
                 return;
@@ -51,10 +51,14 @@ namespace tcli {
 
             public void Deploy() {
                 Model deployModel = models.ModelsDictionary[args[1]];
-                var PbiWorkspaceString = deployModel.PbiWorkspaceString;
-                var PbiSemanticModelName = deployModel.PbiSemanticModelName;
-                var TmdlPath = deployModel.TmdlPath;
-                Server server = new Server();
+                var PbiWorkspaceString = deployModel.PBI_WORKSPACE_STRING;
+                var PbiSemanticModelName = deployModel.PBI_SEMANTIC_MODEL_NAME;
+                var TmdlPath = deployModel.TMDL_PATH;
+
+                Console.WriteLine("Deploying model: " + PbiSemanticModelName);
+                Console.WriteLine("To workspace: " + PbiWorkspaceString);
+                Console.WriteLine("Using TMDL path: " + TmdlPath);
+                Console.WriteLine("");
                 return;
             }
 

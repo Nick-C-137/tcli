@@ -33,6 +33,9 @@ namespace tcli
                 case "pe":
                     program.PrintEnv();
                     break;
+                case "reload":
+                    program.LoadEnvironment();
+                    break;
                 default:
                     Console.WriteLine("Unknown command.");
                     break;
