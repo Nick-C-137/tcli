@@ -55,6 +55,7 @@ namespace tcli {
                 var PbiSemanticModelName = deployModel.PBI_SEMANTIC_MODEL_NAME;
                 var TmdlPath = deployModel.TMDL_PATH;
 
+                Console.WriteLine("");
                 Console.WriteLine("Deploying model: " + PbiSemanticModelName);
                 Console.WriteLine("To workspace: " + PbiWorkspaceString);
                 Console.WriteLine("Using TMDL path: " + TmdlPath);

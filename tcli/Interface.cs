@@ -22,7 +22,7 @@ namespace tcli
 
             switch (args[0].ToLower())
             {
-                case "dp":
+                case "deploy":
                     if (args.Length < 2)
                     {
                         Console.WriteLine("Please provide a model deployment name.");
@@ -30,11 +30,8 @@ namespace tcli
                     }
                     program.Deploy();
                     break;
-                case "pe":
+                case "printenv":
                     program.PrintEnv();
-                    break;
-                case "reload":
-                    program.LoadEnvironment();
                     break;
                 default:
                     Console.WriteLine("Unknown command.");
