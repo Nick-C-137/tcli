@@ -31,15 +31,6 @@ namespace tcli {
                 models.LoadModels(Directory.GetCurrentDirectory() + "/tcli-models.json");
             }
 
-            public void Deploy() {
-                Model deployModel = models.ModelsDictionary[args[1]];
-                var PbiWorkspaceString = deployModel.PbiWorkspaceString;
-                var PbiSemanticModelName = deployModel.PbiSemanticModelName;
-                var TmdlPath = deployModel.TmdlPath;
-                Server server = new Server();
-                return;
-            }
-
             public void PrintEnv() {
                 Console.WriteLine("");
                 Console.WriteLine("Environment Variables:");
@@ -57,5 +48,15 @@ namespace tcli {
                 }
                 return;
             }
+
+            public void Deploy() {
+                Model deployModel = models.ModelsDictionary[args[1]];
+                var PbiWorkspaceString = deployModel.PbiWorkspaceString;
+                var PbiSemanticModelName = deployModel.PbiSemanticModelName;
+                var TmdlPath = deployModel.TmdlPath;
+                Server server = new Server();
+                return;
+            }
+
         }
 }
