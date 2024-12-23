@@ -4,6 +4,7 @@ using System.Text.Json;
 
 using System;
 using System.IO;
+using System.Linq.Expressions;
 
 namespace tcli {
     public class Program {
@@ -50,10 +51,31 @@ namespace tcli {
             }
 
             public void Deploy() {
-                Model deployModel = models.ModelsDictionary[args[1]];
-                var PbiWorkspaceString = deployModel.PBI_WORKSPACE_STRING;
-                var PbiSemanticModelName = deployModel.PBI_SEMANTIC_MODEL_NAME;
-                var TmdlPath = deployModel.TMDL_PATH;
+                Model deployModel;
+                
+                string PbiWorkspaceString = "";
+                string PbiSemanticModelName = "";
+                string TmdlPath = "";
+
+                try {
+                    deployModel = models.ModelsDictionary[args[1]];
+                    if (deployModel == null) { 
+                        Console.WriteLine("Model not found."); 
+                        return;
+                    }
+                    PbiWorkspaceString = deployModel.PBI_WORKSPACE_STRING;
+                    PbiSemanticModelName = deployModel.PBI_SEMANTIC_MODEL_NAME;
+                    TmdlPath = deployModel.TMDL_PATH;
+                } catch (KeyNotFoundException) {
+                    Console.WriteLine("");
+                    Console.WriteLine("Model not found. Available models:");
+                    PrintEnv();
+                    return;
+                } catch (Exception ex) {
+                    Console.WriteLine("");
+                    Console.WriteLine("An error occurred: " + ex.Message);
+                    return;
+                }
 
                 Console.WriteLine("");
                 Console.WriteLine("Deploying model: " + PbiSemanticModelName);
