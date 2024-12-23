@@ -13,11 +13,34 @@ namespace tcli {
             private string? env_azure_tenant_id;
             private string? env_azure_app_id;
             private string? env_azure_app_secret;
+            private string config_dir = "/tcli/_config";
             private string[]? args;
 
             public Program(string[] args) {
+                
+                Initialize();
                 LoadEnvironment();
                 this.args = args;
+            }
+
+            public void Initialize() {
+                var directoryPath = Directory.GetCurrentDirectory() + config_dir;
+                
+                // Config directory
+                if (!Directory.Exists(directoryPath)) {
+                    Directory.CreateDirectory(directoryPath);
+                    Console.WriteLine("Config directory initialzed.");
+                }
+                var filePath = directoryPath + "/tcli-models.json";
+                if (!File.Exists(filePath)) {
+                    File.WriteAllText(filePath, GetStrings.ModelJson());
+                }
+
+                // Dax directory
+                directoryPath = Directory.GetCurrentDirectory() + "/tcli/dax";
+                if (!Directory.Exists(directoryPath)) {
+                    Directory.CreateDirectory(directoryPath);
+                }
             }
             
             public void LoadEnvironment() {
@@ -29,7 +52,7 @@ namespace tcli {
                 if (env_azure_app_id == null)               {throw new Exception("AZURE_APP_ID environment variable not defined.."); }
                 if (env_azure_app_secret == null)           {throw new Exception("AZURE_APP_SECRET environment variable not defined.."); }
                 
-                models.LoadModels(Directory.GetCurrentDirectory() + "/tcli-models.json");
+                models.LoadModels(Directory.GetCurrentDirectory() + config_dir + "/tcli-models.json");
             }
 
             public void PrintEnv() {

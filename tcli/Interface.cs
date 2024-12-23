@@ -13,7 +13,7 @@ namespace tcli
         static void Main(string[] args)
         {
             Program program = new Program(args);
-
+            
             if (args.Length == 0)
             {
                 Console.WriteLine("Please provide a command.");
