@@ -1,0 +1,12 @@
+{
+    "starbase" : {
+        "PBI_WORKSPACE_STRING": "",
+        "PBI_SEMANTIC_MODEL_NAME": "",
+        "TMDL_PATH": ""
+    },
+    "roaming" : {
+        "PBI_WORKSPACE_STRING": "",
+        "PBI_SEMANTIC_MODEL_NAME": "",
+        "TMDL_PATH": ""
+    }
+}
