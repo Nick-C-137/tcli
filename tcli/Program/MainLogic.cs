@@ -22,6 +22,39 @@ namespace tcli {
                 LoadEnvironment();
                 this.args = args;
             }
+            private void LoadEnvironment() {
+                
+                // Load environment variables
+                env_variables.LoadEnvVariables(Directory.GetCurrentDirectory() + config_dir + "/tcli-env-variables.json");
+
+                if (env_variables.AZURE_TENANT_ID == null)            {throw new Exception("AZURE_TENANT_ID environment variable not defined.."); }
+                if (env_variables.AZURE_APP_ID == null)               {throw new Exception("AZURE_APP_ID environment variable not defined.."); }
+                if (env_variables.AZURE_APP_SECRET == null)           {throw new Exception("AZURE_APP_SECRET environment variable not defined.."); }
+
+                // Load default model
+                models.LoadModels(Directory.GetCurrentDirectory() + config_dir + "/tcli-models.json");
+                
+                var avtiveModelsLoaded = new List<TcliModel>();
+
+                foreach (var model in models.ModelsDictionary) {
+                    if (model.Value.IsActive) {
+                        avtiveModelsLoaded.Add(model.Value);
+                    }
+                }
+
+                if (avtiveModelsLoaded.Count == 0) {
+                    throw new Exception("No active model found.");
+                }
+
+                if (avtiveModelsLoaded.Count > 1) {
+                    throw new Exception("Multiple active models found.");
+                }
+
+                active_model = avtiveModelsLoaded[0];
+
+                
+            }
+            
             private void ConnectToServer() {
                 string connectionString = 
                     $"DataSource={active_model.PBI_WORKSPACE_STRING};" +
@@ -57,39 +90,6 @@ namespace tcli {
                 if (!Directory.Exists(configDirectoryPath)) {
                     Directory.CreateDirectory(configDirectoryPath);
                 }
-            }
-            
-            public void LoadEnvironment() {
-                
-                // Load environment variables
-                env_variables.LoadEnvVariables(Directory.GetCurrentDirectory() + config_dir + "/tcli-env-variables.json");
-
-                if (env_variables.AZURE_TENANT_ID == null)            {throw new Exception("AZURE_TENANT_ID environment variable not defined.."); }
-                if (env_variables.AZURE_APP_ID == null)               {throw new Exception("AZURE_APP_ID environment variable not defined.."); }
-                if (env_variables.AZURE_APP_SECRET == null)           {throw new Exception("AZURE_APP_SECRET environment variable not defined.."); }
-
-                // Load default model
-                models.LoadModels(Directory.GetCurrentDirectory() + config_dir + "/tcli-models.json");
-                
-                var avtiveModelsLoaded = new List<TcliModel>();
-
-                foreach (var model in models.ModelsDictionary) {
-                    if (model.Value.IsActive) {
-                        avtiveModelsLoaded.Add(model.Value);
-                    }
-                }
-
-                if (avtiveModelsLoaded.Count == 0) {
-                    throw new Exception("No active model found.");
-                }
-
-                if (avtiveModelsLoaded.Count > 1) {
-                    throw new Exception("Multiple active models found.");
-                }
-
-                active_model = avtiveModelsLoaded[0];
-
-                
             }
 
             public void PrintEnv() {
