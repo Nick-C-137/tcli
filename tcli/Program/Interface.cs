@@ -12,7 +12,7 @@ namespace tcli
 
         static void Main(string[] args)
         {
-            Program program = new Program(args);
+            MainLogic program = new MainLogic(args);
             
             if (args.Length == 0)
             {
@@ -23,11 +23,6 @@ namespace tcli
             switch (args[0].ToLower())
             {
                 case "deploy":
-                    if (args.Length < 2)
-                    {
-                        Console.WriteLine("Please provide a model deployment name.");
-                        return;
-                    }
                     program.Deploy();
                     break;
                 case "printenv":

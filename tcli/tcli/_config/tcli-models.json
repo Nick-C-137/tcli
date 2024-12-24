@@ -1,13 +1,14 @@
-
 {
     "modelName1" : {
-        "PBI_WORKSPACE_STRING": "powerbi://api.powerbi.com/v1.0/myorg/workspace,",
-        "PBI_SEMANTIC_MODEL_NAME": "modelName",
-        "TMDL_PATH": "tmdlPath"
+        "IsActive": true,
+        "PBI_WORKSPACE_STRING": "",
+        "PBI_SEMANTIC_MODEL_NAME": "",
+        "TMDL_PATH": ""
     },
     "modelName2" : {
-        "PBI_WORKSPACE_STRING": "powerbi://api.powerbi.com/v1.0/myorg/workspace,",
-        "PBI_SEMANTIC_MODEL_NAME": "modelName",
-        "TMDL_PATH": "tmdlPath"
+        "IsActive": false,
+        "PBI_WORKSPACE_STRING": "",
+        "PBI_SEMANTIC_MODEL_NAME": "",
+        "TMDL_PATH": ""
     }
 }

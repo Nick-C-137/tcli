@@ -1,20 +1,21 @@
 using System.Text.Json;
 
 namespace tcli {
-    public class Model
+    public class TcliModel
     {
+        public bool IsActive { get; set; }
         public string? PBI_WORKSPACE_STRING { get; set; }
         public string? PBI_SEMANTIC_MODEL_NAME { get; set; }
         public string? TMDL_PATH { get; set; }
     }
 
-    public class Models
+    public class TcliModels
     {
-        public Dictionary<string, Model>? ModelsDictionary { get; set; }
+        public Dictionary<string, TcliModel>? ModelsDictionary { get; set; }
         public void LoadModels(string modelsPath)
         {
             string modelsJson = File.ReadAllText(modelsPath);
-            ModelsDictionary = JsonSerializer.Deserialize<Dictionary<string, Model>>(modelsJson);
+            ModelsDictionary = JsonSerializer.Deserialize<Dictionary<string, TcliModel>>(modelsJson);
             if (ModelsDictionary == null) { throw new Exception("Models could not be loaded."); }
         }
     }
