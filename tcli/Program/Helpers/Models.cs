@@ -18,6 +18,12 @@ namespace tcli {
             ModelsDictionary = JsonSerializer.Deserialize<Dictionary<string, TcliModel>>(modelsJson);
             if (ModelsDictionary == null) { throw new Exception("Models could not be loaded."); }
         }
+
+        public void SaveModels(string modelsPath)
+        {
+            string modelsJson = JsonSerializer.Serialize(ModelsDictionary, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(modelsPath, modelsJson);
+        }
     }
 
     

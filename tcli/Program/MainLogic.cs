@@ -11,7 +11,7 @@ namespace tcli {
             
             private TcliModels models = new TcliModels();
             private EnvVariables env_variables = new EnvVariables();
-            private TcliModel active_model;
+            private TcliModel active_tcli_model;
             private string config_dir = "/tcli/_config";
             private string[]? args;
             private Server server = new Server();
@@ -22,6 +22,24 @@ namespace tcli {
                 LoadEnvironment();
                 this.args = args;
             }
+
+            public void ActivateTcliModel (string modelName) {
+                foreach (var model in models.ModelsDictionary) {
+                    model.Value.IsActive = false;
+                }
+                if (models.ModelsDictionary.ContainsKey(modelName)) {
+                    models.ModelsDictionary[modelName].IsActive = true;
+                    models.SaveModels(Directory.GetCurrentDirectory() + config_dir + "/tcli-models.json");
+                    Console.WriteLine("");
+                    Console.WriteLine("Model activated - see new environment below... ");
+                    PrintEnv();
+                } else {
+                    Console.WriteLine("");
+                    Console.WriteLine("Model not found: " + modelName);
+                    Console.WriteLine("");
+                }
+            }
+
             private void LoadEnvironment() {
                 
                 // Load environment variables
@@ -50,14 +68,14 @@ namespace tcli {
                     throw new Exception("Multiple active models found.");
                 }
 
-                active_model = avtiveModelsLoaded[0];
+                active_tcli_model = avtiveModelsLoaded[0];
 
                 
             }
             
             private void ConnectToServer() {
                 string connectionString = 
-                    $"DataSource={active_model.PBI_WORKSPACE_STRING};" +
+                    $"DataSource={active_tcli_model.PBI_WORKSPACE_STRING};" +
                     $"User ID=app:{env_variables.AZURE_APP_ID}@{env_variables.AZURE_TENANT_ID};" +
                     $"Password={env_variables.AZURE_APP_SECRET};";
 
@@ -115,9 +133,9 @@ namespace tcli {
                
 
                 Console.WriteLine("");
-                Console.WriteLine("Deploying model: " + active_model.PBI_SEMANTIC_MODEL_NAME);
-                Console.WriteLine("To workspace: " + active_model.PBI_WORKSPACE_STRING);
-                Console.WriteLine("Using TMDL path: " + active_model.TMDL_PATH);
+                Console.WriteLine("Deploying model: " + active_tcli_model.PBI_SEMANTIC_MODEL_NAME);
+                Console.WriteLine("To workspace: " + active_tcli_model.PBI_WORKSPACE_STRING);
+                Console.WriteLine("Using TMDL path: " + active_tcli_model.TMDL_PATH);
                 Console.WriteLine("");
 
                 ConnectToServer();
@@ -126,23 +144,23 @@ namespace tcli {
                 // Serialize the TMDL file
                 Console.WriteLine("Serializing TMDL...");
                 Console.WriteLine("");
-                var local_model = TmdlSerializer.DeserializeModelFromFolder(active_model.TMDL_PATH);
+                var local_model = TmdlSerializer.DeserializeModelFromFolder(active_tcli_model.TMDL_PATH);
 
                 // Returns a mutation of the dataset name if it already exists e.g. [datasetName] - 1
-                string new_model_name = server.Databases.GetNewName(active_model.PBI_SEMANTIC_MODEL_NAME);
+                string new_model_name = server.Databases.GetNewName(active_tcli_model.PBI_SEMANTIC_MODEL_NAME);
 
                 // Create new dataset if it does not already exist
-                if (new_model_name == active_model.PBI_SEMANTIC_MODEL_NAME) {
+                if (new_model_name == active_tcli_model.PBI_SEMANTIC_MODEL_NAME) {
                     Console.WriteLine("Creating new model as it does not exist...");
                     Console.WriteLine("");
                     remote_model = new Database() {
-                        Name = active_model.PBI_SEMANTIC_MODEL_NAME,
+                        Name = active_tcli_model.PBI_SEMANTIC_MODEL_NAME,
                         Model = new Model()
                     };
                     server.Databases.Add(remote_model);
                     remote_model.Update(Microsoft.AnalysisServices.UpdateOptions.ExpandFull);
                 } else {
-                    remote_model = server.Databases.GetByName(active_model.PBI_SEMANTIC_MODEL_NAME);
+                    remote_model = server.Databases.GetByName(active_tcli_model.PBI_SEMANTIC_MODEL_NAME);
                 }
 
                 // Deploy model

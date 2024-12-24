@@ -28,6 +28,14 @@ namespace tcli
                 case "printenv":
                     program.PrintEnv();
                     break;
+                case "activate":
+                    if (args.Length < 2)
+                    {
+                        Console.WriteLine("Please provide a model name.");
+                        return;
+                    }
+                    program.ActivateTcliModel(args[1]);
+                    break;
                 default:
                     Console.WriteLine("Unknown command.");
                     break;
