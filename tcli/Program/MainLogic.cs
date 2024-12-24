@@ -33,6 +33,7 @@ namespace tcli {
                 Console.WriteLine("");
                 server.Connect(connectionString);
             }
+            
             public void Initialize() {
                 var configDirectoryPath = Directory.GetCurrentDirectory() + config_dir;
                 
