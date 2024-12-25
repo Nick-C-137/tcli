@@ -12,6 +12,7 @@ namespace tcli
 
         static void Main(string[] args)
         {
+            
             MainLogic program = new MainLogic(args);
             
             if (args.Length == 0)
@@ -35,6 +36,14 @@ namespace tcli
                         return;
                     }
                     program.ActivateTcliModel(args[1]);
+                    break;
+                case "query":
+                    if (args.Length < 2)
+                    {
+                        Console.WriteLine("Please provide a model name.");
+                        return;
+                    }
+                    program.ExecuteDaxQuery(args[1]);
                     break;
                 default:
                     Console.WriteLine("Unknown command.");
