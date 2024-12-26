@@ -33,18 +33,8 @@ public static string EnvVariablesJson() {
 }
 
 public static string DaxQueryJsonPayload(string daxQuery) {
-    return 
-$@"{{
-  ""queries"": [
-    {{
-      ""query"": ""{daxQuery}"",
-    }}
-  ],
-  ""serializerSettings"": {{
-    ""includeNulls"": true
-  }}
-}}
-";
+    daxQuery = daxQuery.Replace("\"", "\\\"");
+    return $"{{\"queries\":[{{\"query\":\"{daxQuery}\"}}],\"serializerSettings\":{{\"includeNulls\":true}}}}";
 }
 
 }

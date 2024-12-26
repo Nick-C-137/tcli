@@ -4,7 +4,9 @@ using Microsoft.PowerBI.Api;
 using Microsoft.Identity.Client;
 using System;
 using System.Text;
-using Microsoft.Rest;
+using CsvHelper;
+using System.Globalization;
+using Newtonsoft.Json.Linq;
 
 namespace tcli {
     public class MainLogic {
@@ -207,15 +209,38 @@ namespace tcli {
                     var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
                     client.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
 
-                    // Make the GET request
+                    // Make the POST request
                     HttpResponseMessage response = client.PostAsync(url, content).Result;
-                    response.EnsureSuccessStatusCode();
+                    
+                    try
+                    {
+                        response.EnsureSuccessStatusCode();
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine("Error executing DAX query: " + e.Message);
+                        Console.WriteLine("Response: " + response.Content.ReadAsStringAsync().Result);
+                        return;
+                    }
+                
 
                     // Read the response content
                     string responseBody = response.Content.ReadAsStringAsync().Result;
-                    
-                    Console.WriteLine(responseBody);
 
+                    
+
+                    var serialized = System.Text.Json.JsonSerializer.Deserialize<DaxQueryResult>(responseBody);
+                    var rows = serialized.results[0].tables[0].rows;
+
+                    foreach (var row in rows)
+                    {
+                        foreach (var item in row)
+                        {
+                            Console.WriteLine(item.Key + ": " + item.Value);
+                        }
+                    }
+                    
+                    File.WriteAllText($"{filePath}.raw.json", responseBody);
                 }
             }
                 
