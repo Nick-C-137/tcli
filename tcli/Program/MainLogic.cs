@@ -7,6 +7,7 @@ using System.Text;
 using CsvHelper;
 using System.Globalization;
 using Newtonsoft.Json.Linq;
+using System.Text.Json;
 
 namespace tcli {
     public class MainLogic {
@@ -232,13 +233,62 @@ namespace tcli {
                     var serialized = System.Text.Json.JsonSerializer.Deserialize<DaxQueryResult>(responseBody);
                     var rows = serialized.results[0].tables[0].rows;
 
+                    if (rows == null || !rows.Any())
+                    {
+                        Console.WriteLine("No rows returned.");
+                        return;
+                    }   
+
+                    var csv = new StringBuilder();
+
+                    var header = rows[0].Keys;
+                    
+                    var header_count = 0;
+                    foreach (var key in header)
+                    {
+                        var clean_value = key.Split("[")[1].Replace("]", "");
+
+                        if (header_count == header.Count - 1)
+                        {
+                            csv.Append(clean_value);
+                        }
+                        else
+                        {
+                            csv.Append(clean_value + ",");
+                        }
+                        header_count++;
+                    }
+
+                    csv.AppendLine();
+
                     foreach (var row in rows)
                     {
-                        foreach (var item in row)
+                        var values = row.Values;
+                        var line = new StringBuilder();
+                        var count = 0;
+                        foreach (var jsonElement in values)
                         {
-                            Console.WriteLine(item.Key + ": " + item.Value);
+                            
+                            var string_value = jsonElement + "";
+
+                            var string_value_clean = "\"" + string_value.Replace("\"", "'") + "\"";
+
+                            if (count == values.Count - 1)
+                            {
+                                line.Append(string_value_clean);
+                            }
+                            else
+                            {
+                                line.Append(string_value_clean + ",");
+                            }
+
+                            count++;
+                        
                         }
+                        csv.AppendLine(line.ToString());
                     }
+
+                    File.WriteAllText($"{filePath}.csv", csv.ToString());
                     
                     File.WriteAllText($"{filePath}.raw.json", responseBody);
                 }
