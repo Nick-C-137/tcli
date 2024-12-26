@@ -246,7 +246,7 @@ namespace tcli {
                     var header_count = 0;
                     foreach (var key in header)
                     {
-                        var clean_value = key.Split("[")[1].Replace("]", "");
+                        var clean_value = key.Split("[")[1].Replace("]", "") ;
 
                         if (header_count == header.Count - 1)
                         {
@@ -254,7 +254,7 @@ namespace tcli {
                         }
                         else
                         {
-                            csv.Append(clean_value + ",");
+                            csv.Append(clean_value + ";");
                         }
                         header_count++;
                     }
@@ -279,7 +279,7 @@ namespace tcli {
                             }
                             else
                             {
-                                line.Append(string_value_clean + ",");
+                                line.Append(string_value_clean + ";");
                             }
 
                             count++;
