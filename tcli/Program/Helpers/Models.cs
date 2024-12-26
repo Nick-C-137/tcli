@@ -6,6 +6,7 @@ namespace tcli {
         public bool IsActive { get; set; }
         public string? PBI_WORKSPACE_STRING { get; set; }
         public string? PBI_SEMANTIC_MODEL_NAME { get; set; }
+        public string? PBI_SEMANTIC_MODEL_ID { get; set; }
         public string? TMDL_PATH { get; set; }
     }
 
@@ -17,6 +18,17 @@ namespace tcli {
             string modelsJson = File.ReadAllText(modelsPath);
             ModelsDictionary = JsonSerializer.Deserialize<Dictionary<string, TcliModel>>(modelsJson);
             if (ModelsDictionary == null) { throw new Exception("Models could not be loaded."); }
+
+            foreach (var model in ModelsDictionary.Values)
+            {
+            if (string.IsNullOrEmpty(model.PBI_WORKSPACE_STRING) || 
+                string.IsNullOrEmpty(model.PBI_SEMANTIC_MODEL_NAME) || 
+                string.IsNullOrEmpty(model.PBI_SEMANTIC_MODEL_ID) || 
+                string.IsNullOrEmpty(model.TMDL_PATH))
+            {
+                throw new Exception("One or more model properties are null or empty.");
+            }
+            }
         }
 
         public void SaveModels(string modelsPath)

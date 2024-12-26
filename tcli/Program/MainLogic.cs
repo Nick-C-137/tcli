@@ -1,10 +1,10 @@
 
 using Microsoft.AnalysisServices.Tabular;
-using Microsoft.AnalysisServices.AdomdClient;
-
+using Microsoft.PowerBI.Api;
+using Microsoft.Identity.Client;
 using System;
 using System.Text;
-using System;
+using Microsoft.Rest;
 
 namespace tcli {
     public class MainLogic {
@@ -184,47 +184,42 @@ namespace tcli {
 
                 string daxQuery = File.ReadAllText(filePath);
 
-                string connectionString = 
-                    $"DataSource={active_tcli_model.PBI_WORKSPACE_STRING};" +
-                    $"User ID=app:{env_variables.AZURE_APP_ID}@{env_variables.AZURE_TENANT_ID};" +
-                    $"Password={env_variables.AZURE_APP_SECRET};" +
-                    $"Catalog={active_tcli_model.PBI_SEMANTIC_MODEL_NAME};";
+                string tenantId = env_variables.AZURE_TENANT_ID;
+                string clientId = env_variables.AZURE_APP_ID;
+                string clientSecret = env_variables.AZURE_APP_SECRET;
 
-                using (AdomdConnection connection = new AdomdConnection(connectionString))
+                // Initialize the authentication context
+                var app = ConfidentialClientApplicationBuilder.Create(clientId)
+                    .WithClientSecret(clientSecret)
+                    .WithAuthority(new Uri($"https://login.microsoftonline.com/{tenantId}"))
+                    .Build();
+
+                // Acquire an access token
+                var result = app.AcquireTokenForClient(new[] { "https://analysis.windows.net/powerbi/api/.default" }).ExecuteAsync().Result;
+                var accessToken = result.AccessToken;
+
+                using (HttpClient client = new HttpClient())
                 {
-                    connection.Open();
-                    using (AdomdCommand command = new AdomdCommand(daxQuery, connection))
-                    using (AdomdDataReader reader = command.ExecuteReader())
-                    {
-                        var csv = new StringBuilder();
+                    // Define the URL
+                    string url = $"https://api.powerbi.com/v1.0/myorg/datasets/{active_tcli_model.PBI_SEMANTIC_MODEL_ID}/executeQueries";
 
-                    // Write headers
-                    for (int i = 0; i < reader.FieldCount; i++)
-                    {
-                        csv.Append(reader.GetName(i));
-                        if (i < reader.FieldCount - 1) csv.Append(",");
-                    }
-                    csv.AppendLine();
+                    var jsonPayload = GetStrings.DaxQueryJsonPayload(daxQuery);
+                    var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+                    client.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
 
-                    // Write rows
-                    while (reader.Read())
-                    {
-                        for (int i = 0; i < reader.FieldCount; i++)
-                        {
-                            csv.Append(reader.GetValue(i).ToString());
-                            if (i < reader.FieldCount - 1) csv.Append(",");
-                        }
-                        csv.AppendLine();
-                    }
+                    // Make the GET request
+                    HttpResponseMessage response = client.PostAsync(url, content).Result;
+                    response.EnsureSuccessStatusCode();
 
-                    // Write CSV to a file
-                    string csvFilePath = $"{filePath}.csv";
-                    File.WriteAllText(csvFilePath, csv.ToString());
+                    // Read the response content
+                    string responseBody = response.Content.ReadAsStringAsync().Result;
+                    
+                    Console.WriteLine(responseBody);
 
-                    Console.WriteLine($"Results serialized to CSV at {csvFilePath}");
-                    }
                 }
             }
+                
+            
                 
         }
 }
