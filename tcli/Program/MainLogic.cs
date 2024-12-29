@@ -8,6 +8,7 @@ using CsvHelper;
 using System.Globalization;
 using Newtonsoft.Json.Linq;
 using System.Text.Json;
+using System.Diagnostics;
 
 namespace tcli {
     public class MainLogic {
@@ -107,7 +108,7 @@ namespace tcli {
                 }
 
                 // Dax directory
-                configDirectoryPath = Directory.GetCurrentDirectory() + "/tcli/dax";
+                configDirectoryPath = Directory.GetCurrentDirectory() + "/tcli/queries";
                 if (!Directory.Exists(configDirectoryPath)) {
                     Directory.CreateDirectory(configDirectoryPath);
                 }
@@ -220,7 +221,9 @@ namespace tcli {
                     catch (Exception e)
                     {
                         Console.WriteLine("Error executing DAX query: " + e.Message);
-                        Console.WriteLine("Response: " + response.Content.ReadAsStringAsync().Result);
+                        var errorResult = response.Content.ReadAsStringAsync().Result;
+                        var formattedErrorResult = System.Text.Json.JsonSerializer.Serialize(JsonDocument.Parse(errorResult), new JsonSerializerOptions { WriteIndented = true });
+                        Console.WriteLine($"Response: \n {formattedErrorResult}");
                         return;
                     }
                 
@@ -246,7 +249,7 @@ namespace tcli {
                     var header_count = 0;
                     foreach (var key in header)
                     {
-                        var clean_value = key.Split("[")[1].Replace("]", "") ;
+                        var clean_value = "\"" + key.Split("[")[1].Replace("]", "") + "\"";
 
                         if (header_count == header.Count - 1)
                         {
@@ -254,7 +257,7 @@ namespace tcli {
                         }
                         else
                         {
-                            csv.Append(clean_value + ";");
+                            csv.Append(clean_value + ",");
                         }
                         header_count++;
                     }
@@ -271,7 +274,7 @@ namespace tcli {
                             
                             var string_value = jsonElement + "";
 
-                            var string_value_clean = "\"" + string_value.Replace("\"", "'") + "\"";
+                            var string_value_clean = "\"" + string_value.Replace("\"", "'").Replace("\n", " \\n ").Replace("    ", " \\t ") + "\"";
 
                             if (count == values.Count - 1)
                             {
@@ -279,7 +282,7 @@ namespace tcli {
                             }
                             else
                             {
-                                line.Append(string_value_clean + ";");
+                                line.Append(string_value_clean + ",");
                             }
 
                             count++;
@@ -292,6 +295,40 @@ namespace tcli {
                     
                     File.WriteAllText($"{filePath}.raw.json", responseBody);
                 }
+            
+                // Command to execute
+                string command = "code";
+                string arguments = $"{filePath}.csv"; // Example arguments (optional)
+
+                // Create a process start info
+                var processStartInfo = new ProcessStartInfo
+                {
+                    FileName = command, // Command or executable
+                    Arguments = arguments, // Command arguments
+                    RedirectStandardOutput = true, // Capture the output
+                    RedirectStandardError = true, // Capture errors
+                    UseShellExecute = false, // Don't use the OS shell
+                    CreateNoWindow = true // Don't create a terminal window
+                };
+
+                // Start the process
+                using (var process = new Process { StartInfo = processStartInfo })
+                {
+                    process.Start();
+
+                    // Read the output and errors
+                    string output = process.StandardOutput.ReadToEnd();
+                    string errors = process.StandardError.ReadToEnd();
+
+                    process.WaitForExit(); // Ensure the process has completed
+
+                    if (!string.IsNullOrEmpty(errors))
+                    {
+                        Console.WriteLine("Errors:");
+                        Console.WriteLine(errors);
+                    }
+                }
+
             }
                 
             
