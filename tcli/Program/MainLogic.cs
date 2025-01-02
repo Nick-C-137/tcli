@@ -9,6 +9,8 @@ using System.Globalization;
 using Newtonsoft.Json.Linq;
 using System.Text.Json;
 using System.Diagnostics;
+using System.Data.Odbc;
+
 
 namespace tcli {
     public class MainLogic {
@@ -128,6 +130,8 @@ namespace tcli {
                     Console.WriteLine("\t\tPbiWorkspaceString: " + model.Value.PBI_WORKSPACE_STRING);
                     Console.WriteLine("\t\tPbiSemanticModelName: " + model.Value.PBI_SEMANTIC_MODEL_NAME);
                     Console.WriteLine("\t\tTmdlPath: " + model.Value.TMDL_PATH);
+                    Console.WriteLine("\t\tDbType: " + model.Value.DB_TYPE);
+                    Console.WriteLine("\t\tDbConnectionString: " + model.Value.DB_CONNECTION_STRING);
                     Console.WriteLine();
                 }
                 return;
@@ -331,7 +335,67 @@ namespace tcli {
 
             }
                 
-            
+            public void ExecuteSqlQuery(string filePath) {
                 
+                if (!File.Exists(filePath)) {
+                    throw new FileNotFoundException("DAX query file not found: " + filePath);
+                }
+
+                string sqlQuery = File.ReadAllText(filePath);
+
+                // DSN-less connection string
+                string connectionString = active_tcli_model.DB_CONNECTION_STRING;
+
+                using (OdbcConnection connection = new OdbcConnection(connectionString))
+                {
+                    
+                        connection.Open();
+                        Console.WriteLine("Connected to the database successfully!");
+
+                        string query = sqlQuery;
+                        OdbcCommand command = new OdbcCommand(query, connection);
+
+                        using (OdbcDataReader reader = command.ExecuteReader())
+                        {
+
+                            StringBuilder csv = new StringBuilder();
+                            var headerWritten = false;
+
+                            while (reader.Read())
+                            {
+                                if (!headerWritten)
+                                {
+                                    for (int i = 0; i < reader.FieldCount; i++)
+                                    {
+                                        csv.Append($"\"{reader.GetName(i)}\"");
+                                        if (i < reader.FieldCount - 1)
+                                            csv.Append(",");
+                                    }
+                                    csv.AppendLine();
+                                    headerWritten = true;
+                                }
+
+                                for (int i = 0; i < reader.FieldCount; i++)
+                                {
+                                    var value = reader[i].ToString();
+                                    if (DateTime.TryParse(value, out DateTime dateValue))
+                                    {
+                                        value = dateValue.ToString("yyyy-MM-dd HH:mm:ss");
+                                    }
+                                    var valueWritten = $"\"{value.Replace("\"", "'")}\"";
+                                    csv.Append(value);
+                                    if (i < reader.FieldCount - 1)
+                                        csv.Append(",");
+                                }
+                                csv.AppendLine();
+                            }
+
+                            File.WriteAllText($"{filePath}.csv", csv.ToString());
+                        }
+                    
+                }
+
+            }
         }
-}
+                
+    }

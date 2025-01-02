@@ -43,7 +43,17 @@ namespace tcli
                         Console.WriteLine("Please provide a model name.");
                         return;
                     }
-                    program.ExecuteDaxQuery(args[1]);
+                    if (args[1].ToLower().EndsWith(".dax"))
+                    {
+                        program.ExecuteDaxQuery(args[1]);
+                        break;
+                    } else if (args[1].ToLower().EndsWith(".sql"))
+                    {
+                        program.ExecuteSqlQuery(args[1]);
+                        break;
+                    }
+
+                    
                     break;
                 default:
                     Console.WriteLine("Unknown command.");

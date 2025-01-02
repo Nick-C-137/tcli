@@ -6,17 +6,21 @@ public static string ModelJson() {
 @"{
     ""modelName1"" : {
         ""IsActive"": true,
-        ""PBI_WORKSPACE_STRING"": ""input_workspace_string1"",
-        ""PBI_SEMANTIC_MODEL_NAME"": ""input_model_name1"",
-        ""PBI_SEMANTIC_MODEL_ID"": ""input_model_id1"",
-        ""TMDL_PATH"": ""input_tmdl_path1""
+        ""PBI_WORKSPACE_STRING"": ""input_workspace_string"",
+        ""PBI_SEMANTIC_MODEL_NAME"": ""input_model_name"",
+        ""PBI_SEMANTIC_MODEL_ID"": ""input_model_id"",
+        ""TMDL_PATH"": ""input_tmdl_path"",
+        ""DB_TYPE"": ""Databricks"",
+        ""DB_CONNECTION_STRING"": ""input_db_connection_string""
     },
     ""modelName2"" : {
         ""IsActive"": false,
-        ""PBI_WORKSPACE_STRING"": ""input_workspace_string2"",
-        ""PBI_SEMANTIC_MODEL_NAME"": ""input_model_name2"",
-        ""PBI_SEMANTIC_MODEL_ID"": ""input_model_id2"",
-        ""TMDL_PATH"": ""input_tmdl_path2""
+        ""PBI_WORKSPACE_STRING"": ""input_workspace_string"",
+        ""PBI_SEMANTIC_MODEL_NAME"": ""input_model_name"",
+        ""PBI_SEMANTIC_MODEL_ID"": ""input_model_id"",
+        ""TMDL_PATH"": ""input_tmdl_path"",
+        ""DB_TYPE"": ""Databricks"",
+        ""DB_CONNECTION_STRING"": ""input_db_connection_string""
     }
 }
 ";

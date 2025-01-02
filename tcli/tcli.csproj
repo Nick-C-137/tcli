@@ -12,6 +12,7 @@
         <PackageReference Include="Microsoft.PowerBI.Api" Version="4.*" />
         <PackageReference Include="Microsoft.Identity.Client" Version="4.*" />
         <PackageReference Include="CsvHelper" Version="33.*" />
+        <PackageReference Include="System.Data.Odbc" Version="7.0.0" />
 	</ItemGroup>
 
 </Project>

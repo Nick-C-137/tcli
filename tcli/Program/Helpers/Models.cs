@@ -8,6 +8,8 @@ namespace tcli {
         public string? PBI_SEMANTIC_MODEL_NAME { get; set; }
         public string? PBI_SEMANTIC_MODEL_ID { get; set; }
         public string? TMDL_PATH { get; set; }
+        public string? DB_TYPE { get; set; }
+        public string? DB_CONNECTION_STRING { get; set; }
     }
 
     public class TcliModels
