@@ -276,7 +276,7 @@ namespace tcli {
                         row_number++;
                     }
 
-                    Helpers.WriteCSV(filePath, table);
+                    Helpers.WriteCSV(filePath, table, false);
 
                     File.WriteAllText($"{filePath}.raw.json", responseBody);
                 }
@@ -339,8 +339,8 @@ namespace tcli {
 
                                 table.Add(row_values.ToArray());
                             }
-
-                            Helpers.WriteCSV(filePath, table);
+                            bool isDescribeSQLStatement = filePath.ToLower().Contains("describe");
+                            Helpers.WriteCSV(filePath, table, isDescribeSQLStatement);
                         }
                     
                 }
