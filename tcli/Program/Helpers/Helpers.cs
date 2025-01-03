@@ -60,7 +60,7 @@ namespace tcli {
                     }
                     else
                     {
-                        line.Append(value_to_write + "|"); // CSV Separator
+                        line.Append(value_to_write + ","); // CSV Separator
                     }
 
                     col_number++;
