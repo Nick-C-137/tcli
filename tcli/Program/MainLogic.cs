@@ -235,8 +235,6 @@ namespace tcli {
                     // Read the response content
                     string responseBody = response.Content.ReadAsStringAsync().Result;
 
-                    
-
                     var serialized = System.Text.Json.JsonSerializer.Deserialize<DaxQueryResult>(responseBody);
                     var rows = serialized.results[0].tables[0].rows;
 
@@ -246,99 +244,52 @@ namespace tcli {
                         return;
                     }   
 
-                    var csv = new StringBuilder();
-
-                    var header = rows[0].Keys;
-                    
-                    var header_count = 0;
-                    foreach (var key in header)
-                    {
-                        var clean_value = "\"" + key.Split("[")[1].Replace("]", "") + "\"";
-
-                        if (header_count == header.Count - 1)
-                        {
-                            csv.Append(clean_value);
-                        }
-                        else
-                        {
-                            csv.Append(clean_value + ",");
-                        }
-                        header_count++;
-                    }
-
-                    csv.AppendLine();
+                    var table = new List<object[]>();
+                    var row_number = 0;
 
                     foreach (var row in rows)
                     {
-                        var values = row.Values;
-                        var line = new StringBuilder();
-                        var count = 0;
-                        foreach (var jsonElement in values)
+                        var row_values = new List<object>();
+                        if (row_number == 0) // Write Keys on first row to extract headers
                         {
-                            
-                            var string_value = jsonElement + "";
-
-                            var string_value_clean = "\"" + string_value.Replace("\"", "'").Replace("\n", " \\n ").Replace("    ", " \\t ") + "\"";
-
-                            if (count == values.Count - 1)
+                            foreach (var element in row)
                             {
-                                line.Append(string_value_clean);
+                                var headerColValue = element.Key.Split("[")[1].Replace("]", ""); // Remove table name from header (DAX query result format)
+                                row_values.Add(headerColValue);
                             }
-                            else
-                            {
-                                line.Append(string_value_clean + ",");
-                            }
+                            table.Add(row_values.ToArray());
+                            row_values.Clear();
 
-                            count++;
-                        
+                            // Then add values
+                            foreach (var element in row)
+                            {
+                                row_values.Add(element.Value  + ""); // Only implicit cast to string of JsonElement works for some reason
+                            }
+                        } else {
+                            foreach (var element in row)
+                            {
+                                row_values.Add(element.Value  + ""); // Only implicit cast to string of JsonElement works for some reason
+                            }
                         }
-                        csv.AppendLine(line.ToString());
+                        
+                        table.Add(row_values.ToArray());
+                        row_number++;
                     }
 
-                    File.WriteAllText($"{filePath}.csv", csv.ToString());
-                    
+                    Helpers.WriteCSV(filePath, table);
+
                     File.WriteAllText($"{filePath}.raw.json", responseBody);
                 }
-            
-                // Command to execute
-                string command = "code";
-                string arguments = $"{filePath}.csv"; // Example arguments (optional)
 
-                // Create a process start info
-                var processStartInfo = new ProcessStartInfo
-                {
-                    FileName = command, // Command or executable
-                    Arguments = arguments, // Command arguments
-                    RedirectStandardOutput = true, // Capture the output
-                    RedirectStandardError = true, // Capture errors
-                    UseShellExecute = false, // Don't use the OS shell
-                    CreateNoWindow = true // Don't create a terminal window
-                };
-
-                // Start the process
-                using (var process = new Process { StartInfo = processStartInfo })
-                {
-                    process.Start();
-
-                    // Read the output and errors
-                    string output = process.StandardOutput.ReadToEnd();
-                    string errors = process.StandardError.ReadToEnd();
-
-                    process.WaitForExit(); // Ensure the process has completed
-
-                    if (!string.IsNullOrEmpty(errors))
-                    {
-                        Console.WriteLine("Errors:");
-                        Console.WriteLine(errors);
-                    }
-                }
+                string result_file_path = $"{filePath}.csv";
+                Helpers.OpenFileInVsCode(result_file_path);
 
             }
                 
             public void ExecuteSqlQuery(string filePath) {
                 
                 if (!File.Exists(filePath)) {
-                    throw new FileNotFoundException("DAX query file not found: " + filePath);
+                    throw new FileNotFoundException("SQL query file not found: " + filePath);
                 }
 
                 string sqlQuery = File.ReadAllText(filePath);
@@ -350,7 +301,6 @@ namespace tcli {
                 {
                     
                         connection.Open();
-                        Console.WriteLine("Connected to the database successfully!");
 
                         string query = sqlQuery;
                         OdbcCommand command = new OdbcCommand(query, connection);
@@ -358,42 +308,45 @@ namespace tcli {
                         using (OdbcDataReader reader = command.ExecuteReader())
                         {
 
-                            StringBuilder csv = new StringBuilder();
+                            var table = new List<object[]>();
                             var headerWritten = false;
 
                             while (reader.Read())
                             {
+                                var row_values = new List<object>();
                                 if (!headerWritten)
                                 {
                                     for (int i = 0; i < reader.FieldCount; i++)
                                     {
-                                        csv.Append($"\"{reader.GetName(i)}\"");
-                                        if (i < reader.FieldCount - 1)
-                                            csv.Append(",");
+                                        row_values.Add(reader.GetName(i).ToString());
                                     }
-                                    csv.AppendLine();
+                                    table.Add(row_values.ToArray());
+                                    row_values.Clear();
+
+                                    // Then add values
+                                    for (int i = 0; i < reader.FieldCount; i++)
+                                    {
+                                        row_values.Add(reader[i].ToString());
+                                    }
+
                                     headerWritten = true;
+                                } else {
+                                    for (int i = 0; i < reader.FieldCount; i++)
+                                    {
+                                        row_values.Add(reader[i].ToString());
+                                    }
                                 }
 
-                                for (int i = 0; i < reader.FieldCount; i++)
-                                {
-                                    var value = reader[i].ToString();
-                                    if (DateTime.TryParse(value, out DateTime dateValue))
-                                    {
-                                        value = dateValue.ToString("yyyy-MM-dd HH:mm:ss");
-                                    }
-                                    var valueWritten = $"\"{value.Replace("\"", "'")}\"";
-                                    csv.Append(value);
-                                    if (i < reader.FieldCount - 1)
-                                        csv.Append(",");
-                                }
-                                csv.AppendLine();
+                                table.Add(row_values.ToArray());
                             }
 
-                            File.WriteAllText($"{filePath}.csv", csv.ToString());
+                            Helpers.WriteCSV(filePath, table);
                         }
                     
                 }
+
+                string result_file_path = $"{filePath}.csv";
+                Helpers.OpenFileInVsCode(result_file_path);
 
             }
         }
