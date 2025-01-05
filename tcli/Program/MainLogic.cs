@@ -10,6 +10,8 @@ using Newtonsoft.Json.Linq;
 using System.Text.Json;
 using System.Diagnostics;
 using System.Data.Odbc;
+using System.Text.RegularExpressions;
+using System.ComponentModel.Design;
 
 
 namespace tcli {
@@ -276,7 +278,7 @@ namespace tcli {
                         row_number++;
                     }
 
-                    Helpers.WriteCSV(filePath, table, false);
+                    Helpers.WriteCSV(filePath, table);
 
                     File.WriteAllText($"{filePath}.raw.json", responseBody);
                 }
@@ -288,11 +290,26 @@ namespace tcli {
                 
             public void ExecuteSqlQuery(string filePath) {
                 
+                bool is_select_request = false;
+
                 if (!File.Exists(filePath)) {
                     throw new FileNotFoundException("SQL query file not found: " + filePath);
                 }
 
                 string sqlQuery = File.ReadAllText(filePath);
+                string describeQuery = "";
+
+                // Check if query contains select request
+                string text_to_be_replaced = "";
+                string pattern = @"--# select\s+(.*?)\s+#";
+                string extractedTableName = "";
+                Match match = Regex.Match(sqlQuery, pattern);
+                if (match.Success) {
+                    extractedTableName = match.Groups[1].Value;
+                    describeQuery = $"DESCRIBE {extractedTableName}";
+                    is_select_request = true;
+                    text_to_be_replaced = $"--# select {extractedTableName} #";
+                }
 
                 // DSN-less connection string
                 string connectionString = active_tcli_model.DB_CONNECTION_STRING;
@@ -302,7 +319,14 @@ namespace tcli {
                     
                         connection.Open();
 
-                        string query = sqlQuery;
+                        string query;
+
+                        if (is_select_request){
+                            query = describeQuery;
+                        } else {
+                            query = sqlQuery;
+                        }
+
                         OdbcCommand command = new OdbcCommand(query, connection);
 
                         using (OdbcDataReader reader = command.ExecuteReader())
@@ -339,14 +363,40 @@ namespace tcli {
 
                                 table.Add(row_values.ToArray());
                             }
-                            bool isDescribeSQLStatement = filePath.ToLower().Contains("describe");
-                            Helpers.WriteCSV(filePath, table, isDescribeSQLStatement);
+
+                            if (is_select_request) {
+                                string select_statement = "SELECT";
+                                
+                                var row_num = 0;
+                                
+                                foreach (var row in table) {
+                                    Console.WriteLine(row[0]);
+                                    if (row_num == 0) {
+                                        // Do nothing 
+                                    } else if (row_num == 1) {
+                                        select_statement += $"\n\t\t `{row[0]}` -- {row[1]}"; // {column name} -- {column_type}
+                                    } else {
+                                        select_statement += $"\n\t\t,`{row[0]}` -- {row[1]}"; // {column name} -- {column_type}
+                                    }
+                                    row_num++;
+                                }
+                                
+                                select_statement += "\n\tFROM";
+                                select_statement += $"\n\t\t{extractedTableName}";
+                                sqlQuery = sqlQuery.Replace(text_to_be_replaced, select_statement);
+                                File.WriteAllText(filePath, sqlQuery);
+
+                            } else {
+                                Helpers.WriteCSV(filePath, table);    
+                                string result_file_path = $"{filePath}.csv";
+                                Helpers.OpenFileInVsCode(result_file_path); 
+                            }
+
                         }
                     
                 }
 
-                string result_file_path = $"{filePath}.csv";
-                Helpers.OpenFileInVsCode(result_file_path);
+                
 
             }
         }

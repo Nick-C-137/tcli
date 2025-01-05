@@ -5,7 +5,7 @@ using CsvHelper;
 namespace tcli {
     class Helpers {
 
-        public static void WriteCSV (string filePath, List<object[]> table, bool isDescribeSQLStatement) {
+        public static void WriteCSV (string filePath, List<object[]> table) {
 
                     
             var csv = new StringBuilder();
@@ -49,23 +49,6 @@ namespace tcli {
                             .Replace("\n", " \\n ") // Replace new lines with '\n'
                             .Replace("    ", " \\t ") // Replace tabs with '\t'
                             .Replace("|", "^");
-                    }
-
-                    // Beatify sql describe results
-                    if (isDescribeSQLStatement && col_number == 0 && row_number > 0) {
-                        
-                        var leading_white_space = "    ";
-                        var trailing_white_space = "";
-                        var spaces = 100 - value_to_write.Length;
-                        for (int i = 0; i < spaces; i++) {
-                            trailing_white_space += " ";
-                        }
-                        if (row_number == 1) {  
-                            value_to_write = leading_white_space + $" `{value_to_write}`" + trailing_white_space;
-                        } else {
-                            value_to_write = leading_white_space + $",`{value_to_write}`" + trailing_white_space;
-                        }
-                        
                     }
 
                     value_to_write = $"\"{value_to_write}\""; // Wrap in quotes
