@@ -33,14 +33,14 @@ namespace tcli {
 
                     dynamic value_to_write;
 
-                    if (DateTime.TryParse(string_value, out DateTime dateValue)) {
-                        value_to_write = dateValue.ToString("yyyy-MM-dd HH:mm:ss");
-                    } else if (int.TryParse(string_value, out int intValue)) {
+                    if (int.TryParse(string_value, out int intValue)) {
                         value_to_write = intValue.ToString("N0");
                     } else if (double.TryParse(string_value, out double doubleValue)) {
                         value_to_write = doubleValue.ToString("N");
                     } else if (bool.TryParse(string_value, out bool boolValue)) {
                         value_to_write = boolValue.ToString();
+                    } else if (DateTime.TryParse(string_value, out DateTime dateValue)) {
+                        value_to_write = dateValue.ToString("yyyy-MM-dd HH:mm:ss");
                     } else if (string_value == "" || string_value == null) {
                         value_to_write = "-";
                     } else {

@@ -167,6 +167,7 @@ namespace tcli {
                         Name = active_tcli_model.PBI_SEMANTIC_MODEL_NAME,
                         Model = new Model()
                     };
+                    remote_model.Model.Culture = local_model.Culture; // Culture can onlty be defined at creation time
                     server.Databases.Add(remote_model);
                     remote_model.Update(Microsoft.AnalysisServices.UpdateOptions.ExpandFull);
                 } else {
