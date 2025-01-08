@@ -1,9 +1,18 @@
 using System.Diagnostics;
 using System.Text;
 using CsvHelper;
+using Microsoft.Identity.Client;
+using System.Text.Json;
+using System.Net.Cache;
 
 namespace tcli {
     class Helpers {
+
+        public enum HttpRequestType 
+        {
+            POST,
+            GET
+        }
 
         public static void WriteCSV (string filePath, List<object[]> table) {
 
@@ -106,6 +115,60 @@ namespace tcli {
                     Console.WriteLine(errors);
                 }
             }
+        }
+    
+        public static string RequestPbiApi (EnvVariables env_variables, string httpUrl, string jsonBody, HttpRequestType request_type) {
+                
+                string tenantId = env_variables.AZURE_TENANT_ID;
+                string clientId = env_variables.AZURE_APP_ID;
+                string clientSecret = env_variables.AZURE_APP_SECRET;
+
+                // Initialize the authentication context
+                var app = ConfidentialClientApplicationBuilder.Create(clientId)
+                    .WithClientSecret(clientSecret)
+                    .WithAuthority(new Uri($"https://login.microsoftonline.com/{tenantId}"))
+                    .Build();
+
+                // Acquire an access token
+                var result = app.AcquireTokenForClient(new[] { "https://analysis.windows.net/powerbi/api/.default" }).ExecuteAsync().Result;
+                var accessToken = result.AccessToken;
+
+                using (HttpClient client = new HttpClient())
+                {
+                    // Define the URL
+                    string url = httpUrl;
+
+                    var jsonPayload = jsonBody;
+                    var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+                    client.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
+
+                    HttpResponseMessage response;
+
+                    // Make the POST request
+                    if (request_type == HttpRequestType.POST) {
+                        response = client.PostAsync(url, content).Result;
+                    } else {
+                        response = client.GetAsync(url).Result;
+                    }
+                
+                    try
+                    {
+                        response.EnsureSuccessStatusCode();
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine("Error executing DAX query: " + e.Message);
+                        var errorResult = response.Content.ReadAsStringAsync().Result;
+                        var formattedErrorResult = System.Text.Json.JsonSerializer.Serialize(JsonDocument.Parse(errorResult), new JsonSerializerOptions { WriteIndented = true });
+                        Console.WriteLine($"Response: \n {formattedErrorResult}");
+                        return "";
+                    }
+                
+
+                    // Read the response content
+                    string responseBody = response.Content.ReadAsStringAsync().Result;
+                    return responseBody;
+                }
         }
     }
 }

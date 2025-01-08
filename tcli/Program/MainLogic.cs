@@ -195,94 +195,55 @@ namespace tcli {
 
                 string daxQuery = File.ReadAllText(filePath);
 
-                string tenantId = env_variables.AZURE_TENANT_ID;
-                string clientId = env_variables.AZURE_APP_ID;
-                string clientSecret = env_variables.AZURE_APP_SECRET;
+                var jsonPayload = GetStrings.DaxQueryJsonPayload(daxQuery);
+                string url = $"https://api.powerbi.com/v1.0/myorg/datasets/{active_tcli_model.PBI_SEMANTIC_MODEL_ID}/executeQueries";
+                string responseBody = Helpers.RequestPbiApi(env_variables, url, jsonPayload, Helpers.HttpRequestType.POST);
 
-                // Initialize the authentication context
-                var app = ConfidentialClientApplicationBuilder.Create(clientId)
-                    .WithClientSecret(clientSecret)
-                    .WithAuthority(new Uri($"https://login.microsoftonline.com/{tenantId}"))
-                    .Build();
+                var serialized = System.Text.Json.JsonSerializer.Deserialize<DaxQueryResult>(responseBody);
+                var rows = serialized.results[0].tables[0].rows;
 
-                // Acquire an access token
-                var result = app.AcquireTokenForClient(new[] { "https://analysis.windows.net/powerbi/api/.default" }).ExecuteAsync().Result;
-                var accessToken = result.AccessToken;
-
-                using (HttpClient client = new HttpClient())
+                if (rows == null || !rows.Any())
                 {
-                    // Define the URL
-                    string url = $"https://api.powerbi.com/v1.0/myorg/datasets/{active_tcli_model.PBI_SEMANTIC_MODEL_ID}/executeQueries";
+                    Console.WriteLine("No rows returned.");
+                    return;
+                }   
 
-                    var jsonPayload = GetStrings.DaxQueryJsonPayload(daxQuery);
-                    var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
-                    client.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
+                var table = new List<object[]>();
+                var row_number = 0;
 
-                    // Make the POST request
-                    HttpResponseMessage response = client.PostAsync(url, content).Result;
-                    
-                    try
+                foreach (var row in rows)
+                {
+                    var row_values = new List<object>();
+                    if (row_number == 0) // Write Keys on first row to extract headers
                     {
-                        response.EnsureSuccessStatusCode();
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine("Error executing DAX query: " + e.Message);
-                        var errorResult = response.Content.ReadAsStringAsync().Result;
-                        var formattedErrorResult = System.Text.Json.JsonSerializer.Serialize(JsonDocument.Parse(errorResult), new JsonSerializerOptions { WriteIndented = true });
-                        Console.WriteLine($"Response: \n {formattedErrorResult}");
-                        return;
-                    }
-                
-
-                    // Read the response content
-                    string responseBody = response.Content.ReadAsStringAsync().Result;
-
-                    var serialized = System.Text.Json.JsonSerializer.Deserialize<DaxQueryResult>(responseBody);
-                    var rows = serialized.results[0].tables[0].rows;
-
-                    if (rows == null || !rows.Any())
-                    {
-                        Console.WriteLine("No rows returned.");
-                        return;
-                    }   
-
-                    var table = new List<object[]>();
-                    var row_number = 0;
-
-                    foreach (var row in rows)
-                    {
-                        var row_values = new List<object>();
-                        if (row_number == 0) // Write Keys on first row to extract headers
+                        foreach (var element in row)
                         {
-                            foreach (var element in row)
-                            {
-                                var headerColValue = element.Key.Split("[")[1].Replace("]", ""); // Remove table name from header (DAX query result format)
-                                row_values.Add(headerColValue);
-                            }
-                            table.Add(row_values.ToArray());
-                            row_values.Clear();
-
-                            // Then add values
-                            foreach (var element in row)
-                            {
-                                row_values.Add(element.Value  + ""); // Only implicit cast to string of JsonElement works for some reason
-                            }
-                        } else {
-                            foreach (var element in row)
-                            {
-                                row_values.Add(element.Value  + ""); // Only implicit cast to string of JsonElement works for some reason
-                            }
+                            var headerColValue = element.Key.Split("[")[1].Replace("]", ""); // Remove table name from header (DAX query result format)
+                            row_values.Add(headerColValue);
                         }
-                        
                         table.Add(row_values.ToArray());
-                        row_number++;
+                        row_values.Clear();
+
+                        // Then add values
+                        foreach (var element in row)
+                        {
+                            row_values.Add(element.Value  + ""); // Only implicit cast to string of JsonElement works for some reason
+                        }
+                    } else {
+                        foreach (var element in row)
+                        {
+                            row_values.Add(element.Value  + ""); // Only implicit cast to string of JsonElement works for some reason
+                        }
                     }
-
-                    Helpers.WriteCSV(filePath, table);
-
-                    File.WriteAllText($"{filePath}.raw.json", responseBody);
+                    
+                    table.Add(row_values.ToArray());
+                    row_number++;
                 }
+
+                Helpers.WriteCSV(filePath, table);
+
+                File.WriteAllText($"{filePath}.raw.json", responseBody);
+                
 
                 string result_file_path = $"{filePath}.csv";
                 Helpers.OpenFileInVsCode(result_file_path);
