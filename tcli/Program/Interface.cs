@@ -37,6 +37,14 @@ namespace tcli
                     }
                     program.ActivateTcliModel(args[1]);
                     break;
+                case "refresh":
+                    if (args.Length < 2)
+                    {
+                        Console.WriteLine("Please provide a model name.");
+                        return;
+                    }
+                    program.PbiRefresh(args[1]);
+                    break;
                 case "query":
                     if (args.Length < 2)
                     {

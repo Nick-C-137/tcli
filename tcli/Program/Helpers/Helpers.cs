@@ -11,7 +11,8 @@ namespace tcli {
         public enum HttpRequestType 
         {
             POST,
-            GET
+            GET,
+            DELETE
         }
 
         public static void WriteCSV (string filePath, List<object[]> table) {
@@ -147,6 +148,8 @@ namespace tcli {
                     // Make the POST request
                     if (request_type == HttpRequestType.POST) {
                         response = client.PostAsync(url, content).Result;
+                    } else if (request_type == HttpRequestType.DELETE) {
+                        response = client.DeleteAsync(url).Result;    
                     } else {
                         response = client.GetAsync(url).Result;
                     }
@@ -157,7 +160,7 @@ namespace tcli {
                     }
                     catch (Exception e)
                     {
-                        Console.WriteLine("Error executing DAX query: " + e.Message);
+                        Console.WriteLine("Error executing request to Power BI API: " + e.Message);
                         var errorResult = response.Content.ReadAsStringAsync().Result;
                         var formattedErrorResult = System.Text.Json.JsonSerializer.Serialize(JsonDocument.Parse(errorResult), new JsonSerializerOptions { WriteIndented = true });
                         Console.WriteLine($"Response: \n {formattedErrorResult}");

@@ -249,7 +249,7 @@ namespace tcli {
                 Helpers.OpenFileInVsCode(result_file_path);
 
             }
-                
+            
             public void ExecuteSqlQuery(string filePath) {
                 
                 bool is_select_request = false;
@@ -359,6 +359,61 @@ namespace tcli {
                 }
 
                 
+
+            }
+        
+            public void PbiRefresh(string argument) {
+                
+                if (active_tcli_model.RefreshDefinitions.TryGetValue(argument, out RefreshDefinition refresh_definition)) {
+                    
+                    var jsonPayload = System.Text.Json.JsonSerializer.Serialize(refresh_definition);
+                    Console.WriteLine($"\nStarted refresh of semantic model: {active_tcli_model.PBI_SEMANTIC_MODEL_NAME} \n");
+                    var url = $"https://api.powerbi.com/v1.0/myorg/groups/{active_tcli_model.PBI_WORKSPACE_ID}/datasets/{active_tcli_model.PBI_SEMANTIC_MODEL_ID}/refreshes";
+                    var response = Helpers.RequestPbiApi(env_variables, url, jsonPayload, Helpers.HttpRequestType.POST);
+                    Console.WriteLine(response);
+
+                } else {
+                    if (argument == "get") {
+                        var url = $"https://api.powerbi.com/v1.0/myorg/groups/{active_tcli_model.PBI_WORKSPACE_ID}/datasets/{active_tcli_model.PBI_SEMANTIC_MODEL_ID}/refreshes";
+                        var response = Helpers.RequestPbiApi(env_variables, url, "", Helpers.HttpRequestType.GET);
+                        var deserializedResponse = System.Text.Json.JsonSerializer.Deserialize<PbiRefreshList>(response);
+                        Console.WriteLine($"Refresh history for semantic model: {active_tcli_model.PBI_SEMANTIC_MODEL_NAME}: \n");
+                        var resultString = "";
+                        var display_count = 1;
+                        foreach (var refresh_result in deserializedResponse.value) {
+                            resultString += $"Request ID: {refresh_result.requestId} \n";
+                                resultString += $"\tid: {refresh_result.id} \n";
+                                resultString += $"\trefreshType: {refresh_result.refreshType} \n";
+                                resultString += $"\tstartTime: {refresh_result.startTime} \n";
+                                resultString += $"\tendTime: {refresh_result.endTime} \n";
+                                resultString += $"\tstatus: {refresh_result.status} \n";
+                                resultString += $"\textendedStatus: {refresh_result.extendedStatus} \n";
+                                resultString += $"\tRefresh Attempts: \n";
+                                    foreach (var attempt in refresh_result.refreshAttempts) {
+                                        resultString += $"\t\tattemptId: {attempt.attemptId} \n";
+                                        resultString += $"\t\tstartTime: {attempt.startTime} \n";
+                                        resultString += $"\t\tendTime: {attempt.endTime} \n";
+                                        resultString += $"\t\ttype: {attempt.type} \n";
+                                    }
+                                resultString += "\n";
+                            if (display_count == 1) {break;}
+                            display_count --;
+                        }
+                        Console.WriteLine(resultString);
+                    } else if (argument == "stop") {
+                        var url = $"https://api.powerbi.com/v1.0/myorg/groups/{active_tcli_model.PBI_WORKSPACE_ID}/datasets/{active_tcli_model.PBI_SEMANTIC_MODEL_ID}/refreshes";
+                        var response = Helpers.RequestPbiApi(env_variables, url, "", Helpers.HttpRequestType.GET);
+                        var deserializedResponse = System.Text.Json.JsonSerializer.Deserialize<PbiRefreshList>(response);
+                        var refresh_request_id = deserializedResponse.value[0].requestId;
+                        Console.WriteLine($"Stopped refresh with request id: {refresh_request_id} \n");
+                        url = $"https://api.powerbi.com/v1.0/myorg/groups/{active_tcli_model.PBI_WORKSPACE_ID}/datasets/{active_tcli_model.PBI_SEMANTIC_MODEL_ID}/refreshes/{refresh_request_id}";
+                        response = Helpers.RequestPbiApi(env_variables, url, "", Helpers.HttpRequestType.DELETE);
+                        Console.WriteLine(response);
+
+                    } else {
+                        Console.WriteLine("No valid arguments provided for command 'refresh' - valid ones are 'start', 'get' and '[refresh_definition_name]' ");
+                    }
+                }
 
             }
         }
