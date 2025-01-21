@@ -24,7 +24,15 @@ namespace tcli
             switch (args[0].ToLower())
             {
                 case "deploy":
-                    program.Deploy();
+                    if (args.Length > 1) {
+                        if (args[1] == "-r") {
+                            program.DeployTabular(deploy_with_refresh: true);
+                        } else {
+                            Console.WriteLine("Unknow deployment flag.");
+                        }
+                    } else {
+                        program.DeployTabular(deploy_with_refresh: false);
+                    }
                     break;
                 case "printenv":
                     program.PrintEnv();

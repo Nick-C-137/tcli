@@ -20,12 +20,13 @@ namespace tcli {
         public int? maxParallelism {get; set;}
         public int? retryCount {get; set;}
         public string? timeout {get; set;}
-        public List<RefreshTable>? tables {get; set;} 
+        public bool? applyRefreshPolicy {get; set;}
+        public List<RefreshTable>? objects {get; set;} 
     }
 
     public class RefreshTable {
-        string? TableName {get; set;}
-        string? PartitionName {get; set;}
+        public string? table {get; set;}
+        public string? partition {get; set;}
     }
 
     public class TcliModels

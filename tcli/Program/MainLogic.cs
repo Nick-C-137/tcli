@@ -139,7 +139,7 @@ namespace tcli {
                 return;
             }
 
-            public void Deploy() {
+            public void DeployTabular(bool deploy_with_refresh) {
                
 
                 Console.WriteLine("");
@@ -149,7 +149,7 @@ namespace tcli {
                 Console.WriteLine("");
 
                 ConnectToServer();
-                Database remote_model;
+                Database remote_database;
 
                 // Serialize the TMDL file
                 Console.WriteLine("Serializing TMDL...");
@@ -158,31 +158,90 @@ namespace tcli {
 
                 // Returns a mutation of the dataset name if it already exists e.g. [datasetName] - 1
                 string new_model_name = server.Databases.GetNewName(active_tcli_model.PBI_SEMANTIC_MODEL_NAME);
+                bool is_a_new_model = new_model_name == active_tcli_model.PBI_SEMANTIC_MODEL_NAME;
 
                 // Create new dataset if it does not already exist
-                if (new_model_name == active_tcli_model.PBI_SEMANTIC_MODEL_NAME) {
+                if (is_a_new_model) {
                     Console.WriteLine("Creating new model as it does not exist...");
                     Console.WriteLine("");
-                    remote_model = new Database() {
+                    remote_database = new Database() {
                         Name = active_tcli_model.PBI_SEMANTIC_MODEL_NAME,
                         Model = new Model()
                     };
-                    remote_model.Model.Culture = local_model.Culture; // Culture can onlty be defined at creation time
-                    server.Databases.Add(remote_model);
-                    remote_model.Update(Microsoft.AnalysisServices.UpdateOptions.ExpandFull);
+                    remote_database.Model.Culture = local_model.Culture; // Culture can onlty be defined at creation time
+                    server.Databases.Add(remote_database);
+                    remote_database.Update(Microsoft.AnalysisServices.UpdateOptions.ExpandFull);
                 } else {
-                    remote_model = server.Databases.GetByName(active_tcli_model.PBI_SEMANTIC_MODEL_NAME);
+                    remote_database = server.Databases.GetByName(active_tcli_model.PBI_SEMANTIC_MODEL_NAME);
                 }
+
+
 
                 // Deploy model
                 Console.WriteLine("Copying local tmdl model to remote tabular model object...");
                 Console.WriteLine("");
-                local_model.CopyTo(remote_model.Model);
+                if (is_a_new_model) {
+                    local_model.CopyTo(remote_database.Model);
+                } else { // Icremental refresh partitions will be wiped if following code section does not exist (even on no new changes)
+                    foreach (var remote_table in remote_database.Model.Tables.Where(t => t.RefreshPolicy != null)) {
+                        var local_table = local_model.Tables[remote_table.Name];
+                        // Need to cast to basic refresh policy because only the abstract class is returned (Basic is the only type that exist as of now)
+                        var local_table_refresh_policy = (BasicRefreshPolicy) local_table.RefreshPolicy;
+                        var remote_table_refresh_policy = (BasicRefreshPolicy) remote_table.RefreshPolicy;
+                        if (
+                            local_table_refresh_policy.RollingWindowGranularity == remote_table_refresh_policy.RollingWindowGranularity &&
+                            local_table_refresh_policy.RollingWindowPeriods     == remote_table_refresh_policy.RollingWindowPeriods &&
+                            local_table_refresh_policy.IncrementalGranularity   == remote_table_refresh_policy.IncrementalGranularity &&
+                            local_table_refresh_policy.IncrementalPeriods       == remote_table_refresh_policy.IncrementalPeriods &&
+                            local_table_refresh_policy.IncrementalPeriodsOffset == remote_table_refresh_policy.IncrementalPeriodsOffset &&
+                            local_table_refresh_policy.PollingExpression        == remote_table_refresh_policy.PollingExpression &&
+                            local_table_refresh_policy.SourceExpression         == remote_table_refresh_policy.SourceExpression &&
+                            remote_table.Partitions.Count() > 1) {
+                            
+                            local_model.Tables[remote_table.Name].Partitions.Clear();
+                            foreach (var remote_partition in remote_table.Partitions) {
+                                var copied_partition = remote_partition.Clone();
+                                local_model.Tables[remote_table.Name].Partitions.Add(copied_partition);
+                            }
 
+                            Console.WriteLine($"{remote_table.Name} -> copied to local model due to no changes in refresh policy (to prevent wiping of incremental refresh partitions).");
+                        } else {
+                            Console.WriteLine($"{remote_table.Name} -> !!! partitions wiped  due to changes in refresh policy !!!");
+                        }
+                    }
+                    local_model.CopyTo(remote_database.Model);
+                }
+
+                Console.WriteLine("");
                 Console.WriteLine("Saving changges to remote tabular model object...");
                 Console.WriteLine("");
-                remote_model.Model.SaveChanges();
+                remote_database.Model.SaveChanges();
 
+                Console.WriteLine("");
+                Console.WriteLine("Applying refresh policies to remote tabular model object...");
+                Console.WriteLine("");
+                remote_database.Model.ApplyRefreshPolicies(refresh: false, refreshNonPolicyTables: false);
+
+                if (deploy_with_refresh) {
+                    Console.WriteLine("Refreshing remote tabular model object...");
+                    Console.WriteLine("");
+                    foreach(var t in remote_database.Model.Tables) {
+                        foreach (var p in t.Partitions.OrderBy(p => p.Name)) {
+                            if (p.State != ObjectState.Ready) {
+                                Console.WriteLine($"{t.Name} - {p.Name} | refreshing...");
+                                p.RequestRefresh(RefreshType.Automatic);
+                                remote_database.Model.SaveChanges();
+                            } else {
+                                Console.WriteLine($"{t.Name} - {p.Name} | in ready state, refresh skipped...");
+                            }
+                            
+                        }
+                    }
+
+                    Console.WriteLine("");
+                    Console.WriteLine("Refresh done...");
+                    Console.WriteLine("");
+                } 
 
                 return;
             }
@@ -367,6 +426,9 @@ namespace tcli {
                 if (active_tcli_model.RefreshDefinitions.TryGetValue(argument, out RefreshDefinition refresh_definition)) {
                     
                     var jsonPayload = System.Text.Json.JsonSerializer.Serialize(refresh_definition);
+                    var options = new JsonSerializerOptions { WriteIndented = true };
+                    var prettyJson = System.Text.Json.JsonSerializer.Serialize(JsonDocument.Parse(jsonPayload).RootElement, options);
+                    Console.WriteLine($"\nUsing following refresh definition:\n{prettyJson}");
                     Console.WriteLine($"\nStarted refresh of semantic model: {active_tcli_model.PBI_SEMANTIC_MODEL_NAME} \n");
                     var url = $"https://api.powerbi.com/v1.0/myorg/groups/{active_tcli_model.PBI_WORKSPACE_ID}/datasets/{active_tcli_model.PBI_SEMANTIC_MODEL_ID}/refreshes";
                     var response = Helpers.RequestPbiApi(env_variables, url, jsonPayload, Helpers.HttpRequestType.POST);
