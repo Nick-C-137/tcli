@@ -206,7 +206,7 @@ namespace tcli {
 
                             Console.WriteLine($"{remote_table.Name} -> copied to local model due to no changes in refresh policy (to prevent wiping of incremental refresh partitions).");
                         } else {
-                            Console.WriteLine($"{remote_table.Name} -> !!! partitions wiped  due to changes in refresh policy !!!");
+                            Console.WriteLine($"{remote_table.Name} -> !!! partitions wiped  due to changes in refresh policy or source expression !!!");
                         }
                     }
                     local_model.CopyTo(remote_database.Model);
