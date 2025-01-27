@@ -178,36 +178,64 @@ namespace tcli {
         {
             if (table == null || table.Count == 0)
             {
-                Console.WriteLine("The table is empty.");
-                return;
+            Console.WriteLine("No data returned.");
+            return;
             }
 
             // Determine the maximum width of each column
             int[] maxColumnWidths = new int[table[0].Count];
             foreach (var row in table)
             {
-                for (int i = 0; i < row.Count; i++)
+            for (int i = 0; i < row.Count; i++)
+            {
+                if (row[i].Length > maxColumnWidths[i])
                 {
-                    if (row[i].Length > maxColumnWidths[i])
-                    {
-                        maxColumnWidths[i] = row[i].Length;
-                    }
+                maxColumnWidths[i] = row[i].Length;
                 }
             }
+            }
 
-            // Print the table
-            foreach (var row in table)
+            // Print the header row in mustard yellow
+            var header = table[0];
+            Console.ForegroundColor = ConsoleColor.DarkYellow;
+            for (int i = 0; i < header.Count; i++)
             {
-                for (int i = 0; i < row.Count; i++)
+            string cell = header[i].PadRight(maxColumnWidths[i]);
+            Console.Write(cell);
+            if (i < header.Count - 1)
+            {
+                Console.Write(" | ");
+            }
+            }
+            Console.ResetColor();
+            Console.WriteLine();
+
+            // Print the separator row
+            for (int i = 0; i < header.Count; i++)
+            {
+            string separator = new string('-', maxColumnWidths[i]);
+            Console.Write(separator);
+            if (i < header.Count - 1)
+            {
+                Console.Write("-+-");
+            }
+            }
+            Console.WriteLine();
+
+            // Print the rest of the table
+            for (int rowIndex = 1; rowIndex < table.Count; rowIndex++)
+            {
+            var row = table[rowIndex];
+            for (int i = 0; i < row.Count; i++)
+            {
+                string cell = row[i].PadRight(maxColumnWidths[i]);
+                Console.Write(cell);
+                if (i < row.Count - 1)
                 {
-                    string cell = row[i].PadRight(maxColumnWidths[i]);
-                    Console.Write(cell);
-                    if (i < row.Count - 1)
-                    {
-                        Console.Write(" | ");
-                    }
+                Console.Write(" | ");
                 }
-                Console.WriteLine();
+            }
+            Console.WriteLine();
             }
         }
     }
