@@ -288,7 +288,7 @@ namespace tcli {
 
                 var tablePartitions = new List<List<string>>
                 {
-                    new List<string> { "Table", "Partition", "State", "Refreshed Time" } // Columns
+                    new List<string> { "Table", "Partition", "State", "Last Refreshed" } // Columns
                 };
                 foreach (var table in server.Databases.GetByName(active_tcli_model.PBI_SEMANTIC_MODEL_NAME).Model.Tables)
                 {
@@ -312,6 +312,8 @@ namespace tcli {
                 }
 
                 Helpers.PrintTable(tablePartitions);
+
+                Console.WriteLine("");
             }
             public void ExecuteDaxQuery(string filePath) {
                 
