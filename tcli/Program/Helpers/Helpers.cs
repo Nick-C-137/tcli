@@ -173,5 +173,42 @@ namespace tcli {
                     return responseBody;
                 }
         }
+    
+        public static void PrintTable(List<List<string>> table)
+        {
+            if (table == null || table.Count == 0)
+            {
+                Console.WriteLine("The table is empty.");
+                return;
+            }
+
+            // Determine the maximum width of each column
+            int[] maxColumnWidths = new int[table[0].Count];
+            foreach (var row in table)
+            {
+                for (int i = 0; i < row.Count; i++)
+                {
+                    if (row[i].Length > maxColumnWidths[i])
+                    {
+                        maxColumnWidths[i] = row[i].Length;
+                    }
+                }
+            }
+
+            // Print the table
+            foreach (var row in table)
+            {
+                for (int i = 0; i < row.Count; i++)
+                {
+                    string cell = row[i].PadRight(maxColumnWidths[i]);
+                    Console.Write(cell);
+                    if (i < row.Count - 1)
+                    {
+                        Console.Write(" | ");
+                    }
+                }
+                Console.WriteLine();
+            }
+        }
     }
 }

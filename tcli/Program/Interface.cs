@@ -37,6 +37,26 @@ namespace tcli
                 case "printenv":
                     program.PrintEnv();
                     break;
+                case "list":
+                    if (args.Length > 1) {
+                        if (args[1] == "-p") {
+                            if (args.Length > 2) {
+                                if (args[2] == "-nonready") {
+                                    program.ListPartitons(only_non_ready: true);
+                                } else {
+                                    Console.WriteLine("Unknow partition list flag.");
+                                }
+                            } else {
+                                program.ListPartitons(only_non_ready: false);
+                            }
+                        } else {
+                            Console.WriteLine("Unknow list flag.");
+                        }
+                    } else {
+                        Console.WriteLine("The list opretation requrires a flag.");
+                    }
+                    break;
+                    break;
                 case "activate":
                     if (args.Length < 2)
                     {

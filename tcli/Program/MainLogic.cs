@@ -88,6 +88,7 @@ namespace tcli {
                     $"Password={env_variables.AZURE_APP_SECRET};";
 
                 // Connect to the Power BI workspace referenced in connect string
+                Console.WriteLine("");
                 Console.WriteLine("Connecting to Power BI workspace...");
                 Console.WriteLine("");
                 server.Connect(connectionString);
@@ -246,6 +247,72 @@ namespace tcli {
                 return;
             }
 
+            public void ListPartitons(bool only_non_ready) {
+                ConnectToServer();
+                // var string_list = new List<string>();
+                // Console.WriteLine("Listing Partitions...");
+                // Console.WriteLine("");
+                // foreach (var table in server.Databases.GetByName(active_tcli_model.PBI_SEMANTIC_MODEL_NAME).Model.Tables) {
+                //     if (table.Partitions.Count() > 1) {
+                //         foreach (var partition in table.Partitions) {
+                //             if (only_non_ready) {
+                //                 if (partition.State != ObjectState.Ready) {
+                //                     string_list.Add($"{table.Name} | {partition.Name} | {partition.State} | {partition.RefreshedTime:yyyy-MM-dd HH:mm:ss}"); 
+                //                 }
+                //             } else {
+                //                 string_list.Add($"{table.Name} | {partition.Name} | {partition.State} | {partition.RefreshedTime:yyyy-MM-dd HH:mm:ss}");    
+                //             }
+                            
+                //         }
+                //     } else {
+                //         if (only_non_ready) {
+                //             if (table.Partitions[0].State != ObjectState.Ready) {
+                //                 string_list.Add($"{table.Name} | {table.Partitions[0].State} | {table.Partitions[0].RefreshedTime:yyyy-MM-dd HH:mm:ss}");
+                //             }
+                //         } else {
+                //             string_list.Add($"{table.Name} | {table.Partitions[0].State} | {table.Partitions[0].RefreshedTime:yyyy-MM-dd HH:mm:ss}");
+                //         }
+                //     }
+                    
+                // }
+                // if (string_list.Count == 0) {
+                //     Console.WriteLine("No partitions found.");
+                //     return;
+                // } else {
+                //     string_list.Sort();
+                //     foreach (var item in string_list) {
+                //         Console.WriteLine(item);
+                //     }
+                // }
+                // Console.WriteLine("");
+
+                var tablePartitions = new List<List<string>>
+                {
+                    new List<string> { "Table", "Partition", "State", "Refreshed Time" } // Columns
+                };
+                foreach (var table in server.Databases.GetByName(active_tcli_model.PBI_SEMANTIC_MODEL_NAME).Model.Tables)
+                {
+                    foreach (var partition in table.Partitions)
+                    {
+                        if (only_non_ready && partition.State == ObjectState.Ready)
+                        {
+                            continue;
+                        }
+
+                        var partitionInfo = new List<string>
+                        {
+                            table.Name,
+                            partition.Name,
+                            partition.State.ToString(),
+                            partition.RefreshedTime.ToString("yyyy-MM-dd HH:mm:ss")
+                        };
+
+                        tablePartitions.Add(partitionInfo);
+                    }
+                }
+
+                Helpers.PrintTable(tablePartitions);
+            }
             public void ExecuteDaxQuery(string filePath) {
                 
                  if (!File.Exists(filePath)) {
