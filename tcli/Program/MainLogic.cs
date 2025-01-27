@@ -252,7 +252,7 @@ namespace tcli {
 
                 var tablePartitions = new List<List<string>>
                 {
-                    new List<string> { "Table", "Partition", "State", "Last Refreshed" } // Columns
+                    new List<string> { "Table", "Partition", "State", "Last Refreshed", "Last Modified" } // Columns
                 };
                 foreach (var table in server.Databases.GetByName(active_tcli_model.PBI_SEMANTIC_MODEL_NAME).Model.Tables)
                 {
@@ -268,7 +268,8 @@ namespace tcli {
                             table.Name,
                             partition.Name,
                             partition.State.ToString(),
-                            partition.RefreshedTime.ToString("yyyy-MM-dd HH:mm:ss")
+                            partition.RefreshedTime.ToString("yyyy-MM-dd HH:mm:ss"),
+                            partition.ModifiedTime.ToString("yyyy-MM-dd HH:mm:ss")
                         };
 
                         tablePartitions.Add(partitionInfo);
